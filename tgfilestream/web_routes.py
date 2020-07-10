@@ -69,13 +69,8 @@ async def handle_request(req: web.Request, head: bool = False) -> web.Response:
         if (limit > size) or (offset < 0) or (limit < offset):
             raise ValueError("range not in acceptable format")
     except ValueError:
-        return web.Response(
-            status=416,
-            text="416: Range Not Satisfiable",
-            headers = {
-                "Content-Range": f"bytes */{size}"
-            }
-        )
+        return web.Response(status=416, text="416: Range Not Satisfiable",
+                            headers={"Content-Range": f"bytes */{size}"})
     
     log.info(f"Range {offset} - {limit}")
 
