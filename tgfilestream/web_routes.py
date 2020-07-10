@@ -71,18 +71,15 @@ async def handle_request(req: web.Request, head: bool = False) -> web.Response:
     except ValueError:
         return web.Response(status=416, text="416: Range Not Satisfiable",
                             headers={"Content-Range": f"bytes */{size}"})
-    
-    log.info(f"Range {offset} - {limit}")
-
     if not head:
         ip = get_requester_ip(req)
         if not allow_request(ip):
             return web.Response(status=429)
-        log.info(f"Serving file in {message.id} (chat {message.chat_id}) to {ip}")
+        log.info(f"Serving file in {message.id} (chat {message.chat_id}) to {ip}; Range: {offset} - {limit}")
         body = transfer.download(message.media, file_size=size, offset=offset, limit=limit)
     else:
         body = None
-    return web.Response(status=206 if offset else 200,
+    return web.Response(status=206 if (limit-offset != size) else 200,
                         body=body,
                         headers={
                             "Content-Type": message.file.mime_type,
