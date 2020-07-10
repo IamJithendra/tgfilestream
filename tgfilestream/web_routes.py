@@ -63,8 +63,21 @@ async def handle_request(req: web.Request, head: bool = False) -> web.Response:
         return web.Response(status=404, text="404: Not Found")
 
     size = message.file.size
-    offset = req.http_range.start or 0
-    limit = req.http_range.stop or size
+    try:
+        offset = req.http_range.start or 0
+        limit = req.http_range.stop or size
+        if (limit >= size) or (offset < 0) or (limit < offset):
+            raise ValueError("range not in acceptable format")
+    except ValueError:
+        return web.Response(
+            status=416,
+            text="416: Range Not Satisfiable",
+            headers = {
+                "Content-Range": f"bytes */{size}"
+            }
+        )
+    
+    log.info(f"Range {offset} - {limit}")
 
     if not head:
         ip = get_requester_ip(req)
@@ -78,7 +91,7 @@ async def handle_request(req: web.Request, head: bool = False) -> web.Response:
                         body=body,
                         headers={
                             "Content-Type": message.file.mime_type,
-                            "Content-Range": f"bytes {offset}-{size}/{size}",
+                            "Content-Range": f"bytes {offset}-{limit}/{size}",
                             "Content-Length": str(limit - offset),
                             "Content-Disposition": f'attachment; filename="{file_name}"',
                             "Accept-Ranges": "bytes",
