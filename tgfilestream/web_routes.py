@@ -66,7 +66,7 @@ async def handle_request(req: web.Request, head: bool = False) -> web.Response:
     try:
         offset = req.http_range.start or 0
         limit = req.http_range.stop or size
-        if (limit >= size) or (offset < 0) or (limit < offset):
+        if (limit > size) or (offset < 0) or (limit < offset):
             raise ValueError("range not in acceptable format")
     except ValueError:
         return web.Response(
